@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChatGPT Clone - テストページ</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .chat-container {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .chat-messages {
+            height: 400px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+            background-color: #fafafa;
+        }
+        .message {
+            margin-bottom: 15px;
+            padding: 10px;
+            border-radius: 5px;
+            max-width: 80%;
+        }
+        .user-message {
+            background-color: #007bff;
+            color: white;
+            text-align: right;
+            margin-left: auto;
+        }
+        .ai-message {
+            background-color: #e9ecef;
+            color: #333;
+            margin-right: auto;
+        }
+        .input-container {
+            display: flex;
+            gap: 10px;
+        }
+        #messageInput {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        #sendButton {
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        #sendButton:hover {
+            background-color: #0056b3;
+        }
+        .status {
+            margin-bottom: 20px;
+            padding: 10px;
+            border-radius: 5px;
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .session-info {
+            background-color: #e7f3ff;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            border: 1px solid #b3d9ff;
+        }
+        .session-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .btn-primary {
+            background-color: #007bff;
+            color: white;
+        }
+        .btn-secondary {
+            background-color: #6c757d;
+            color: white;
+        }
+        .btn-success {
+            background-color: #28a745;
+            color: white;
+        }
+        .btn:hover {
+            opacity: 0.8;
+        }
+        .history-panel {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .session-item {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .session-item:hover {
+            background-color: #f8f9fa;
+        }
+        .session-item.active {
+            background-color: #e7f3ff;
+            border-color: #007bff;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🤖 ChatGPT Clone - テストページ</h1>
+        <div class="session-controls">
+            <button class="btn btn-primary" onclick="newSession()">新しい会話</button>
+            <button class="btn btn-secondary" onclick="loadSessions()">履歴一覧</button>
+        </div>
+    </div>
+    
+    <div class="status">
+        ✅ Flaskサーバーが正常に動作しています！<br>
+        🌐 サーバーアドレス: http://127.0.0.1:5000
+    </div>
+
+    <div class="session-info" id="sessionInfo">
+        🆔 セッションID: <span id="currentSessionId">新しいセッション</span>
+    </div>
+
+    <div class="chat-container">
+        <h2>チャットテスト</h2>
+        <div class="chat-messages" id="chatMessages">
+            <div class="message ai-message">
+                👋 こんにちは！ChatGPTクローンのテストページです。<br>
+                メッセージを入力して、AIとの会話をテストしてみてください。<br>
+                会話履歴は自動的に保存され、文脈が保持されます。
+            </div>
+        </div>
+        
+        <div class="input-container">
+            <input type="text" id="messageInput" placeholder="メッセージを入力してください..." onkeypress="handleKeyPress(event)">
+            <button id="sendButton" onclick="sendMessage()">送信</button>
+        </div>
+    </div>
+
+    <div class="history-panel" id="historyPanel" style="display: none;">
+        <h3>会話履歴一覧</h3>
+        <div id="sessionsList"></div>
+    </div>
+
+    <script>
+        let currentSessionId = null;
+
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        }
+
+        function newSession() {
+            currentSessionId = null;
+            document.getElementById('currentSessionId').textContent = '新しいセッション';
+            document.getElementById('chatMessages').innerHTML = `
+                <div class="message ai-message">
+                    👋 新しい会話を始めましょう！<br>
+                    何かお手伝いできることはありますか？
+                </div>
+            `;
+        }
+
+        async function loadSessions() {
+            try {
+                const response = await fetch('/api/sessions');
+                const data = await response.json();
+                
+                if (data.sessions && data.sessions.length > 0) {
+                    const sessionsList = document.getElementById('sessionsList');
+                    sessionsList.innerHTML = '';
+                    
+                    data.sessions.forEach(session => {
+                        const sessionDiv = document.createElement('div');
+                        sessionDiv.className = 'session-item';
+                        sessionDiv.onclick = () => loadSession(session.session_id);
+                        sessionDiv.innerHTML = `
+                            <strong>セッション: ${session.session_id.substring(0, 8)}...</strong><br>
+                            <small>作成: ${new Date(session.created_at).toLocaleString()}</small><br>
+                            <small>メッセージ数: ${session.message_count}件</small>
+                        `;
+                        sessionsList.appendChild(sessionDiv);
+                    });
+                    
+                    document.getElementById('historyPanel').style.display = 'block';
+                } else {
+                    alert('会話履歴がありません');
+                }
+            } catch (error) {
+                console.error('セッション一覧の取得に失敗:', error);
+                alert('セッション一覧の取得に失敗しました');
+            }
+        }
+
+        async function loadSession(sessionId) {
+            try {
+                const response = await fetch(`/api/history/${sessionId}`);
+                const data = await response.json();
+                
+                if (data.history) {
+                    currentSessionId = sessionId;
+                    document.getElementById('currentSessionId').textContent = `セッション: ${sessionId.substring(0, 8)}...`;
+                    
+                    const chatMessages = document.getElementById('chatMessages');
+                    chatMessages.innerHTML = '';
+                    
+                    data.history.forEach(msg => {
+                        addMessage(msg.content, msg.role);
+                    });
+                    
+                    document.getElementById('historyPanel').style.display = 'none';
+                }
+            } catch (error) {
+                console.error('セッション履歴の取得に失敗:', error);
+                alert('セッション履歴の取得に失敗しました');
+            }
+        }
+
+        async function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const message = input.value.trim();
+            
+            if (!message) return;
+            
+            // ユーザーメッセージを表示
+            addMessage(message, 'user');
+            input.value = '';
+            
+            // APIにリクエスト送信
+            const requestData = { message: message };
+            if (currentSessionId) {
+                requestData.session_id = currentSessionId;
+            }
+            
+            try {
+                const response = await fetch('/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(requestData)
+                });
+                
+                const data = await response.json();
+                
+                if (data.error) {
+                    addMessage('❌ エラーが発生しました: ' + data.error, 'ai');
+                } else {
+                    addMessage(data.response, 'ai');
+                    if (data.session_id && !currentSessionId) {
+                        currentSessionId = data.session_id;
+                        document.getElementById('currentSessionId').textContent = `セッション: ${data.session_id.substring(0, 8)}...`;
+                    }
+                }
+            } catch (error) {
+                addMessage('❌ エラーが発生しました: ' + error.message, 'ai');
+            }
+        }
+
+        function addMessage(text, sender) {
+            const chatMessages = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender}-message`;
+            messageDiv.textContent = text;
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+    </script>
+</body>
+</html>

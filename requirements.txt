@@ -1,0 +1,25 @@
+# Webフレームワーク
+Flask==2.3.3
+Flask-SQLAlchemy==3.0.5
+
+# OpenAI API
+openai==1.99.6
+
+# 環境変数管理
+python-dotenv==1.0.0
+
+# データベース（本番環境用）
+psycopg2-binary==2.9.9
+
+# WSGIサーバー（本番環境用）
+gunicorn==21.2.0
+
+# セキュリティ・CORS
+Flask-CORS==4.0.0
+Flask-Limiter==3.5.0
+
+# ログ・モニタリング
+python-json-logger==2.0.7
+
+# その他
+requests==2.31.0
